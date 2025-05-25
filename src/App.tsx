@@ -1,0 +1,66 @@
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider, useAuth } from './context/AuthContext';
+
+// Layouts
+import MainLayout from './components/layout/MainLayout';
+import DashboardLayout from './components/layout/DashboardLayout';
+
+// Pages
+import Home from './pages/Home';
+import Login from './pages/Login';
+import Signup from './pages/Signup';
+import Dashboard from './pages/Dashboard';
+import Project from './pages/Project';
+import CreateProject from './pages/CreateProject';
+import Proposal from './pages/Proposal';
+import Profile from './pages/Profile';
+import Messages from './pages/Messages'
+
+// Protected route component
+const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { isAuthenticated } = useAuth();
+  
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+  
+  return <>{children}</>;
+};
+
+// Main App component
+const App: React.FC = () => {
+  return (
+    <AuthProvider>
+      <Router>
+        <Routes>
+          {/* Public routes with MainLayout */}
+          <Route path="/" element={<MainLayout />}>
+            <Route index element={<Home />} />
+            <Route path="login" element={<Login />} />
+            <Route path="signup" element={<Signup />} />
+          </Route>
+          
+          {/* Protected routes with DashboardLayout */}
+          <Route path="/" element={
+            <ProtectedRoute>
+              <DashboardLayout />
+            </ProtectedRoute>
+          }>
+            <Route path="dashboard" element={<Dashboard />} />
+            <Route path="projects/:id" element={<Project />} />
+            <Route path="post-project" element={<CreateProject />} />
+            <Route path="submit-proposal/:id" element={<Proposal />} />
+            <Route path="profile" element={<Profile />} />
+            <Route path="messages" element={<Messages />} />
+          </Route>
+          
+          {/* Fallback route */}
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </Router>
+    </AuthProvider>
+  );
+};
+
+export default App;
