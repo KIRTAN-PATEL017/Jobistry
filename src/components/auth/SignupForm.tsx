@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { User, Mail, Lock, Briefcase, Loader } from 'lucide-react';
+import axios from 'axios';
 import { useAuth } from '../../context/AuthContext';
 
 const SignupForm: React.FC = () => {
@@ -11,7 +12,7 @@ const SignupForm: React.FC = () => {
   const [role, setRole] = useState<'client' | 'freelancer'>('client');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const { signup } = useAuth();
+  const { setIsAuthenticated, setUser } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -20,8 +21,25 @@ const SignupForm: React.FC = () => {
     setIsLoading(true);
 
     try {
-      await signup(name, email, password, role);
-      navigate('/dashboard');
+      // await signup(name, email, password, role);
+
+      await axios.post('http://localhost:5000/api/auth/register', {
+        'name' : name,
+        'email' : email,
+        'password' : password,
+        'role' : role
+      }, { withCredentials: true })
+      .then((res) => {
+        console.log("Signupform =>", res);
+        if(res.status < 300){
+          setUser(res.data.user);
+          setIsAuthenticated(true);
+          navigate('/dashboard');
+        }
+      })
+      .catch((err) => {
+        console.log(err);
+      })
     } catch (err: any) {
       setError(err.message || 'Failed to create account');
     } finally {

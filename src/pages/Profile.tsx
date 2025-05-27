@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { motion } from 'framer-motion';
 import { User, Mail, MapPin, DollarSign, Plus, X, Save, Loader } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 

@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-
+import axios from 'axios';
 interface User {
   id: string;
   name: string;
@@ -11,107 +11,46 @@ interface User {
 interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  signup: (name: string, email: string, password: string, role: 'client' | 'freelancer') => Promise<void>;
+  loading: boolean;
+  setIsAuthenticated: React.Dispatch<React.SetStateAction<boolean>>;
+  setUser: React.Dispatch<React.SetStateAction<User | null>>;
   logout: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Mock user data for demonstration
-const MOCK_USERS = [
-  {
-    id: '1',
-    name: 'John Doe',
-    email: 'john@example.com',
-    password: 'password123',
-    role: 'client',
-    avatar: 'https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg?auto=compress&cs=tinysrgb&w=150',
-  },
-  {
-    id: '2',
-    name: 'Jane Smith',
-    email: 'jane@example.com',
-    password: 'password123',
-    role: 'freelancer',
-    avatar: 'https://images.pexels.com/photos/415829/pexels-photo-415829.jpeg?auto=compress&cs=tinysrgb&w=150',
-  },
-];
-
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
-    // Check if user is stored in localStorage on mount
-    const storedUser = localStorage.getItem('jobistry_user');
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-      setIsAuthenticated(true);
-    }
+    axios.post('http://localhost:5000/api/auth/validate', {}, { withCredentials: true })
+      .then((res) => {
+        setIsAuthenticated(res.data.success);
+        setUser(res.data.user); // If your backend returns user info
+      })
+      .catch((err) => {
+        console.error(err);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
   }, []);
 
-  const login = async (email: string, password: string) => {
-    // In a real app, this would be an API call
-    return new Promise<void>((resolve, reject) => {
-      setTimeout(() => {
-        const foundUser = MOCK_USERS.find(
-          (u) => u.email === email && u.password === password
-        );
-
-        if (foundUser) {
-          const { password, ...userWithoutPassword } = foundUser;
-          setUser(userWithoutPassword as User);
-          setIsAuthenticated(true);
-          localStorage.setItem('jobistry_user', JSON.stringify(userWithoutPassword));
-          resolve();
-        } else {
-          reject(new Error('Invalid email or password'));
-        }
-      }, 1000); // Simulate API delay
-    });
-  };
-
-  const signup = async (name: string, email: string, password: string, role: 'client' | 'freelancer') => {
-    // In a real app, this would be an API call
-    return new Promise<void>((resolve, reject) => {
-      setTimeout(() => {
-        // Check if user already exists
-        const userExists = MOCK_USERS.some((u) => u.email === email);
-        
-        if (userExists) {
-          reject(new Error('User already exists'));
-          return;
-        }
-
-        // Create new user
-        const newUser = {
-          id: String(MOCK_USERS.length + 1),
-          name,
-          email,
-          role,
-        };
-
-        setUser(newUser);
-        setIsAuthenticated(true);
-        localStorage.setItem('jobistry_user', JSON.stringify(newUser));
-        resolve();
-      }, 1000); // Simulate API delay
-    });
-  };
-
-  const logout = () => {
+  const logout = async () => {
+    await axios.post('http://localhost:5000/api/auth/logout', {}, { withCredentials: true });
     setUser(null);
     setIsAuthenticated(false);
-    localStorage.removeItem('jobistry_user');
   };
 
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated, login, signup, logout }}>
+    <AuthContext.Provider value={{ user, isAuthenticated, loading, setIsAuthenticated, setUser, logout }}>
       {children}
     </AuthContext.Provider>
   );
 };
+
 
 export const useAuth = () => {
   const context = useContext(AuthContext);

@@ -6,14 +6,14 @@ export const register = async (req, res) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
+      return res.status(400).json({ errors: errors.array() , success : false});
     }
 
     const { name, email, password, role } = req.body;
 
     let user = await User.findOne({ email });
     if (user) {
-      return res.status(400).json({ message: 'User already exists' });
+      return res.status(400).json({ message: 'User already exists' , success : false});
     }
 
     user = new User({
@@ -30,7 +30,7 @@ export const register = async (req, res) => {
       process.env.JWT_SECRET,
       { expiresIn: '24h' }
     );
-
+    res.cookie('jwt', token);
     res.status(201).json({
       token,
       user: {
@@ -38,10 +38,12 @@ export const register = async (req, res) => {
         name: user.name,
         email: user.email,
         role: user.role
-      }
+      },
+      success : true
     });
   } catch (error) {
-    res.status(500).json({ message: 'Server error' });
+    res.cookie('jwt', token);
+    res.status(500).json({ message: 'Server error', success : false });
   }
 };
 
@@ -49,19 +51,19 @@ export const login = async (req, res) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
+      return res.status(400).json({ errors: errors.array(), success : false });
     }
 
     const { email, password } = req.body;
 
     const user = await User.findOne({ email });
     if (!user) {
-      return res.status(400).json({ message: 'Invalid credentials' });
+      return res.status(400).json({ message: 'Invalid credentials' , success : false});
     }
 
     const isMatch = await user.comparePassword(password);
     if (!isMatch) {
-      return res.status(400).json({ message: 'Invalid credentials' });
+      return res.status(400).json({ message: 'Invalid credentials' , success : false});
     }
 
     const token = jwt.sign(
@@ -70,6 +72,7 @@ export const login = async (req, res) => {
       { expiresIn: '24h' }
     );
 
+    res.cookie('jwt', token);
     res.json({
       token,
       user: {
@@ -77,9 +80,33 @@ export const login = async (req, res) => {
         name: user.name,
         email: user.email,
         role: user.role
-      }
+      },
+      success : true
     });
   } catch (error) {
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Server error' ,success : false});
+  }
+};
+
+export const logout = async (req, res) => {
+  try {
+    res.clearCookie('jwt', {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'strict'
+    });
+    res.json({ message: 'Logged out successfully',success : true });
+
+  } catch (error) {
+    res.status(500).json({ message: 'Server error',success : false });
+  }
+};
+
+export const isValid = async (req, res) => {
+  try{
+    res.status(201).json({'message' : "Valid user", success : true});
+  }
+  catch(err){
+    res.status(500).json({ message: 'Server error' ,success : false});
   }
 };

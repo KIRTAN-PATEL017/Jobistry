@@ -1,7 +1,6 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
-
 // Layouts
 import MainLayout from './components/layout/MainLayout';
 import DashboardLayout from './components/layout/DashboardLayout';
@@ -17,15 +16,17 @@ import Proposal from './pages/Proposal';
 import Profile from './pages/Profile';
 import Messages from './pages/Messages'
 
+
 // Protected route component
-const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { isAuthenticated } = useAuth();
-  
-  if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
+const ProtectedRoute: React.FC = () => {
+  const { isAuthenticated, loading } = useAuth();
+
+  if (loading) {
+    return <div className="text-center mt-10">Checking authentication...</div>;
   }
-  
-  return <>{children}</>;
+
+  return isAuthenticated ? <Outlet /> : <Navigate to="/login" replace />;
+
 };
 
 // Main App component
@@ -42,17 +43,23 @@ const App: React.FC = () => {
           </Route>
           
           {/* Protected routes with DashboardLayout */}
-          <Route path="/" element={
+          <Route element={<ProtectedRoute />}>
+            <Route element={<DashboardLayout />}>
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/projects/:id" element={<Project />} />
+              <Route path="/post-project" element={<CreateProject />} />
+              <Route path="/submit-proposal/:id" element={<Proposal />} />
+              <Route path="/profile" element={<Profile />} />
+              <Route path="/messages" element={<Messages />} />
+            </Route>
+          </Route>
+
+          <Route element={
             <ProtectedRoute>
               <DashboardLayout />
             </ProtectedRoute>
           }>
-            <Route path="dashboard" element={<Dashboard />} />
-            <Route path="projects/:id" element={<Project />} />
-            <Route path="post-project" element={<CreateProject />} />
-            <Route path="submit-proposal/:id" element={<Proposal />} />
-            <Route path="profile" element={<Profile />} />
-            <Route path="messages" element={<Messages />} />
+            
           </Route>
           
           {/* Fallback route */}
