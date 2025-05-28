@@ -182,7 +182,7 @@ const WelcomeDashboard: React.FC = () => {
             {isClient ? 'Your Projects' : 'Your Proposals'}
           </h2>
           <Link
-            to={isClient ? '/projects' : '/proposals'}
+            to={isClient ? `/projects/${user.id}` : '/proposals'}
             className="text-primary-600 hover:text-primary-700 text-sm font-medium flex items-center"
           >
             View All

@@ -59,7 +59,7 @@ const SignupForm: React.FC = () => {
 
   return (
     <motion.div 
-      className="w-full max-w-md mx-auto"
+      className="w-full max-w-md mx-auto my-auto p-6"
       initial="hidden"
       animate="visible"
       variants={formVariants}

@@ -54,7 +54,7 @@ const Navbar: React.FC = () => {
             <Link to="/" className="text-gray-700 hover:text-primary-600 transition-colors">
               Home
             </Link>
-            <Link to="/browse-jobs" className="text-gray-700 hover:text-primary-600 transition-colors">
+            <Link to="/projects/browse" className="text-gray-700 hover:text-primary-600 transition-colors">
               Browse Jobs
             </Link>
             <Link to="/freelancers" className="text-gray-700 hover:text-primary-600 transition-colors">
@@ -101,7 +101,7 @@ const Navbar: React.FC = () => {
                       <Link to="/dashboard" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                         Dashboard
                       </Link>
-                      <Link to="/profile" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                      <Link to={`/profile/${user?.id}`} className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                         Profile
                       </Link>
                       <Link to="/settings" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
@@ -145,7 +145,7 @@ const Navbar: React.FC = () => {
               <Link to="/" className="text-gray-700 hover:text-primary-600 transition-colors py-2">
                 Home
               </Link>
-              <Link to="/browse-jobs" className="text-gray-700 hover:text-primary-600 transition-colors py-2">
+              <Link to="/projects/search" className="text-gray-700 hover:text-primary-600 transition-colors py-2">
                 Browse Jobs
               </Link>
               <Link to="/freelancers" className="text-gray-700 hover:text-primary-600 transition-colors py-2">

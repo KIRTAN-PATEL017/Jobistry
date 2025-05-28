@@ -5,15 +5,9 @@ import { authenticateToken, authorizeRole } from '../middleware/auth.js';
 
 const router = express.Router();
 
-router.get('/profile', authenticateToken, getProfile);
-router.put('/profile', [
-  authenticateToken,
-  body('name').trim().notEmpty().withMessage('Name is required'),
-  body('bio').optional().trim(),
-  body('skills').optional().isArray(),
-  body('hourlyRate').optional().isNumeric(),
-  body('location').optional().trim()
-], updateProfile);
+router.get('/profile/:userId', getProfile);
+
+router.put('/profile/:userId', authenticateToken, updateProfile);
 
 router.get('/freelancers', getFreelancers);
 

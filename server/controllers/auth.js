@@ -104,7 +104,7 @@ export const logout = async (req, res) => {
 
 export const isValid = async (req, res) => {
   try{
-    res.status(201).json({'message' : "Valid user", success : true});
+    res.status(201).json({user : req.user, 'message' : "Valid user", success : true});
   }
   catch(err){
     res.status(500).json({ message: 'Server error' ,success : false});

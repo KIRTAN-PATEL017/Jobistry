@@ -2,11 +2,12 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { PlusCircle, X, Loader, Upload } from 'lucide-react';
+import axios from 'axios';
 
 const skillOptions = [
   'HTML/CSS', 'JavaScript', 'React', 'Vue.js', 'Angular', 'Node.js', 'Python',
   'PHP', 'WordPress', 'Laravel', 'UI/UX Design', 'Graphic Design', 'Content Writing',
-  'SEO', 'Digital Marketing', 'Mobile Development', 'Data Analysis'
+  'SEO', 'Digital Marketing', 'Mobile Development', 'Data Analysis', 'Java', 'Spring boot'
 ];
 
 const PostProject: React.FC = () => {
@@ -17,8 +18,10 @@ const PostProject: React.FC = () => {
     description: '',
     category: '',
     skills: [] as string[],
-    budgetMin: '',
-    budgetMax: '',
+    "budget": {
+      "min": '',
+      "max": ''
+    },
     deadline: '',
     attachments: [] as File[],
   });
@@ -29,7 +32,18 @@ const PostProject: React.FC = () => {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
+
+    if (name === 'budgetMin' || name === 'budgetMax') {
+      setFormData({
+        ...formData,
+        budget: {
+          ...formData.budget,
+          [name === 'budgetMin' ? 'min' : 'max']: value
+        }
+      });
+    } else {
+      setFormData({ ...formData, [name]: value });
+    }
   };
 
   const handleSkillInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -82,15 +96,19 @@ const PostProject: React.FC = () => {
     setFormData({ ...formData, attachments: updatedFiles });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    
-    // Simulate API call
-    setTimeout(() => {
-      setIsSubmitting(false);
-      navigate('/dashboard', { state: { projectPosted: true } });
-    }, 2000);
+    await axios.post('http://localhost:5000/api/projects', formData, {withCredentials: true})
+    .then((res) => {
+      if(res.data.success) console.log("Project posted successfully");
+      else console.log("Failed to post project.")
+    })
+    .catch(err => console.log(err))
+    .finally(() => {
+        setIsSubmitting(false);
+        navigate('/dashboard', { state: { projectPosted: true } });
+    })
   };
 
   return (
@@ -239,7 +257,7 @@ const PostProject: React.FC = () => {
                 type="number"
                 id="budgetMin"
                 name="budgetMin"
-                value={formData.budgetMin}
+                value={formData.budget.min}
                 onChange={handleInputChange}
                 className="input"
                 placeholder="e.g., 500"
@@ -255,11 +273,11 @@ const PostProject: React.FC = () => {
                 type="number"
                 id="budgetMax"
                 name="budgetMax"
-                value={formData.budgetMax}
+                value={formData.budget.max}
                 onChange={handleInputChange}
                 className="input"
                 placeholder="e.g., 1000"
-                min={formData.budgetMin || "1"}
+                min={formData.budget.min || "1"}
                 required
               />
             </div>

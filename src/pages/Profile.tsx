@@ -1,20 +1,68 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { useParams } from 'react-router-dom';
 import { User, Mail, MapPin, DollarSign, Plus, X, Save, Loader } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import axios from 'axios';
+
+
+type FormDataType = {
+  name: string;
+  email: string;
+  bio: string;
+  location: string;
+  hourlyRate: string;
+  skills: string[];
+  newSkill: string;
+};
+
+type RouteParams = {
+  userId: string;
+};
 
 const Profile: React.FC = () => {
   const { user } = useAuth();
+  const { userId } = useParams() as RouteParams;
+
+  const isOwnProfile = userId === user?.id;
+  const [profile, setProfile] = useState<any>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [formData, setFormData] = useState({
-    name: user?.name || '',
-    email: user?.email || '',
-    bio: user?.bio || '',
-    location: user?.location || '',
-    hourlyRate: user?.hourlyRate || '',
-    skills: user?.skills || [],
+  const [formData, setFormData] = useState<FormDataType>({
+    name: '',
+    email: '',
+    bio: '',
+    location: '',
+    hourlyRate: '',
+    skills: [],
     newSkill: ''
   });
+
+  useEffect(() => {
+  const fetchProfile = async () => {
+    console.log("Fetching profile with userId:", userId); // Debug log
+    try {
+      const res = await axios.get(`http://localhost:5000/api/users/profile/${userId}`, {
+        withCredentials: true
+      });
+      console.log("Profile fetched:", res.data); // Debug log
+      setProfile(res.data);
+      setFormData({
+        name: res.data.name || '',
+        email: res.data.email || '',
+        bio: res.data.bio || '',
+        location: res.data.location || '',
+        hourlyRate: res.data.hourlyRate || null,
+        skills: res.data.skills || [],
+        newSkill: ''
+      });
+      
+    } catch (err) {
+      console.error("Failed to fetch profile:", err); // Debug log
+    }
+  };
+
+  if (userId) fetchProfile();
+}, [userId]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -39,24 +87,39 @@ const Profile: React.FC = () => {
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSaving(true);
+  e.preventDefault();
+  setIsSaving(true);
 
-    try {
-      // API call to update profile would go here
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
-      setIsEditing(false);
-    } finally {
-      setIsSaving(false);
-    }
-  };
+  try {
+    const res = await axios.put(
+      `http://localhost:5000/api/users/profile/${userId}`,
+      {
+        name: formData.name,
+        bio: formData.bio,
+        location: formData.location,
+        hourlyRate: formData.hourlyRate,
+        skills: formData.skills
+      },
+      { withCredentials: true }
+    );
+    
+    setProfile(res.data);
+    setIsEditing(false);
+  } catch (err) {
+    console.error('Failed to update profile:', err);
+  } finally {
+    setIsSaving(false);
+  }
+};
+
+  if (!profile) return <div className="text-center py-10">Loading profile...</div>;
 
   return (
     <div className="max-w-4xl mx-auto">
       <div className="bg-white rounded-xl shadow-sm p-6 md:p-8">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-2xl font-bold">Profile</h1>
-          {!isEditing && (
+          {isOwnProfile && !isEditing && (
             <button
               onClick={() => setIsEditing(true)}
               className="btn btn-outline"
@@ -70,10 +133,10 @@ const Profile: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Profile Image */}
             <div className="md:col-span-2 flex items-center space-x-4">
-              {user?.avatar ? (
+              {profile.avatar ? (
                 <img
-                  src={user.avatar}
-                  alt={user.name}
+                  src={profile.avatar}
+                  alt={profile.name}
                   className="w-20 h-20 rounded-full object-cover"
                 />
               ) : (
@@ -139,7 +202,7 @@ const Profile: React.FC = () => {
                 </div>
               </div>
 
-              {user?.role === 'freelancer' && (
+              {profile.role === 'freelancer' && (
                 <div>
                   <label htmlFor="hourlyRate" className="label">Hourly Rate ($)</label>
                   <div className="relative">
@@ -229,7 +292,7 @@ const Profile: React.FC = () => {
           </div>
 
           {/* Action Buttons */}
-          {isEditing && (
+          {isOwnProfile && isEditing && (
             <div className="mt-6 flex justify-end space-x-4">
               <button
                 type="button"

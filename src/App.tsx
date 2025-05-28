@@ -12,15 +12,14 @@ import Signup from './pages/Signup';
 import Dashboard from './pages/Dashboard';
 import Project from './pages/Project';
 import CreateProject from './pages/CreateProject';
-import Proposal from './pages/Proposal';
 import Profile from './pages/Profile';
-import Messages from './pages/Messages'
+import UserProjects from './components/dashboard/UserProjects';
+import BrowseProjects from './pages/BrowseProjects';
 
 
 // Protected route component
 const ProtectedRoute: React.FC = () => {
   const { isAuthenticated, loading } = useAuth();
-
   if (loading) {
     return <div className="text-center mt-10">Checking authentication...</div>;
   }
@@ -31,6 +30,7 @@ const ProtectedRoute: React.FC = () => {
 
 // Main App component
 const App: React.FC = () => {
+
   return (
     <AuthProvider>
       <Router>
@@ -46,20 +46,14 @@ const App: React.FC = () => {
           <Route element={<ProtectedRoute />}>
             <Route element={<DashboardLayout />}>
               <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/projects/:id" element={<Project />} />
-              <Route path="/post-project" element={<CreateProject />} />
-              <Route path="/submit-proposal/:id" element={<Proposal />} />
-              <Route path="/profile" element={<Profile />} />
-              <Route path="/messages" element={<Messages />} />
-            </Route>
-          </Route>
+              <Route path="/profile/:userId" element={<Profile />} />
 
-          <Route element={
-            <ProtectedRoute>
-              <DashboardLayout />
-            </ProtectedRoute>
-          }>
-            
+              <Route path="/projects/client/:userId" element={<UserProjects />} />
+              <Route path="/projects/:projectId" element={<Project />} />
+              <Route path="/projects/browse" element={<BrowseProjects />} />
+
+              <Route path="/post-project" element={<CreateProject />} />
+            </Route>
           </Route>
           
           {/* Fallback route */}

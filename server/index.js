@@ -7,7 +7,7 @@ import cookieParser from 'cookie-parser';
 
 import authRoutes from './routes/auth.js';
 import userRoutes from './routes/users.js';
-// import projectRoutes from './routes/projects.js';
+import projectRoutes from './routes/projects.js';
 // import proposalRoutes from './routes/proposals.js';
 // import contractRoutes from './routes/contracts.js';
 // import reviewRoutes from './routes/reviews.js';
@@ -38,7 +38,7 @@ mongoose.connect(process.env.MONGODB_URI)
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/users', authenticateToken, userRoutes);
-// app.use('/api/projects', authenticateToken, projectRoutes);
+app.use('/api/projects', authenticateToken, projectRoutes);
 // app.use('/api/proposals', authenticateToken, proposalRoutes);
 // app.use('/api/contracts', authenticateToken, contractRoutes);
 // app.use('/api/reviews', authenticateToken, reviewRoutes);
