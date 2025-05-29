@@ -52,11 +52,6 @@ const Sidebar: React.FC = () => {
       icon: <FileText size={20} /> 
     },
     { 
-      name: 'Payments', 
-      path: '/payments', 
-      icon: <DollarSign size={20} /> 
-    },
-    { 
       name: 'Reviews', 
       path: '/reviews', 
       icon: <Star size={20} /> 
