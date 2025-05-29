@@ -60,9 +60,15 @@ export const getProject = async (req, res) => {
   try { 
     const project = await Project.findOne({
       _id: projectId
-    }).populate('proposals') // Optional: populate if needed
-      .populate('client')
-      .populate('selectedProposal'); // Optional
+    }).populate('client')
+      .populate('selectedProposal')
+      .populate({
+        path: 'proposals',         // first populate proposals
+        populate: {                // then inside proposals populate freelancer
+          path: 'freelancer',
+          select: 'name rating email'  // choose fields you want for freelancer
+        }
+      });
 
     if (!project) {
       return res.status(404).json({ message: 'Project not found or access denied' });

@@ -15,6 +15,7 @@ import CreateProject from './pages/CreateProject';
 import Profile from './pages/Profile';
 import UserProjects from './components/dashboard/UserProjects';
 import BrowseProjects from './pages/BrowseProjects';
+import UserProposals from './components/dashboard/UserProposals';
 
 
 // Protected route component
@@ -53,6 +54,8 @@ const App: React.FC = () => {
               <Route path="/projects/browse" element={<BrowseProjects />} />
 
               <Route path="/post-project" element={<CreateProject />} />
+
+              <Route path="/proposals/:userId" element={<UserProposals />} />
             </Route>
           </Route>
           

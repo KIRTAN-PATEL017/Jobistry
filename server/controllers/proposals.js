@@ -49,27 +49,21 @@ export const createProposal = async (req, res) => {
   }
 };
 
-export const getProposals = async (req, res) => {
+export const getUserProposals = async (req, res) => {
   try {
-    let query = {};
+    const {userId} = req.params;
 
-    if (req.user.role === 'freelancer') {
-      query.freelancer = req.user.id;
-    } else {
-      const projects = await Project.find({ client: req.user.id });
-      query.project = { $in: projects.map(p => p._id) };
-    }
-
-    const proposals = await Proposal.find(query)
-      .populate('project', 'title budget deadline')
-      .populate('freelancer', 'name rating')
+    const proposals = await Proposal.find({ freelancer: userId })
+      .populate('project')
       .sort({ createdAt: -1 });
 
-    res.json(proposals);
-  } catch (error) {
+    res.status(200).json({ proposals });
+  } catch (err) {
+    console.error(err);
     res.status(500).json({ message: 'Server error' });
   }
 };
+
 
 export const getProposal = async (req, res) => {
   try {
@@ -115,70 +109,35 @@ export const updateProposal = async (req, res) => {
   }
 };
 
-export const acceptProposal = async (req, res) => {
-  try {
-    const proposal = await Proposal.findById(req.params.id);
-    if (!proposal) {
-      return res.status(404).json({ message: 'Proposal not found' });
-    }
+export const updateProposalStatus = async (req, res) => {
+  const { projectId, proposalId, action } = req.params;
 
-    const project = await Project.findById(proposal.project);
-    if (!project) {
-      return res.status(404).json({ message: 'Project not found' });
-    }
-
-    if (project.client.toString() !== req.user.id) {
-      return res.status(403).json({ message: 'Not authorized' });
-    }
-
-    if (project.status !== 'open') {
-      return res.status(400).json({ message: 'Project is not open' });
-    }
-
-    proposal.status = 'accepted';
-    await proposal.save();
-
-    project.status = 'in-progress';
-    project.selectedProposal = proposal._id;
-    await project.save();
-
-    // Reject other proposals
-    await Proposal.updateMany(
-      { 
-        project: project._id, 
-        _id: { $ne: proposal._id },
-        status: 'pending'
-      },
-      { status: 'rejected' }
-    );
-
-    res.json(proposal);
-  } catch (error) {
-    res.status(500).json({ message: 'Server error' });
+  if (!['accept', 'reject'].includes(action)) {
+    return res.status(400).json({ message: 'Invalid action' });
   }
-};
 
-export const rejectProposal = async (req, res) => {
   try {
-    const proposal = await Proposal.findById(req.params.id);
-    if (!proposal) {
-      return res.status(404).json({ message: 'Proposal not found' });
+    const proposal = await Proposal.findOne({ _id: proposalId, project: projectId });
+    if (!proposal) return res.status(404).json({ message: 'Proposal not found' });
+
+    if (proposal.status !== 'pending') {
+      return res.status(400).json({ message: 'Proposal already processed' });
     }
 
-    const project = await Project.findById(proposal.project);
-    if (!project) {
-      return res.status(404).json({ message: 'Project not found' });
-    }
-
-    if (project.client.toString() !== req.user.id) {
-      return res.status(403).json({ message: 'Not authorized' });
-    }
-
-    proposal.status = 'rejected';
+    proposal.status = action === 'accept' ? 'accepted' : 'rejected';
     await proposal.save();
 
-    res.json(proposal);
-  } catch (error) {
-    res.status(500).json({ message: 'Server error' });
+    // If accepted, update the project's selectedProposal and status
+    if (action === 'accept') {
+      await Project.findByIdAndUpdate(projectId, {
+        selectedProposal: proposalId,
+        status: 'in-progress',
+      });
+    }
+
+    return res.status(200).json({ message: `Proposal ${action}ed successfully`, proposal });
+  } catch (err) {
+    console.error('Error updating proposal:', err);
+    return res.status(500).json({ message: 'Server error' });
   }
 };

@@ -4,6 +4,17 @@ import { Calendar, DollarSign, Briefcase, User, CheckCircle, FileText } from 'lu
 import { useAuth } from '../../context/AuthContext';
 import axios from 'axios';
 
+interface Proposal {
+  _id: string;
+  freelancerId: string;
+  freelancerName: string;
+  freelancerRating?: number;
+  bidAmount: number;
+  estimatedDays: number;
+  coverLetter: string;
+  status: 'pending' | 'accepted' | 'rejected';
+}
+
 interface ProjectDetail {
   _id: string;
   title: string;
@@ -17,7 +28,7 @@ interface ProjectDetail {
   deadline: string;
   status: string;
   createdAt: string;
-  proposals: any[]; // You can define a Proposal interface if needed
+  proposals: Proposal[];
   client: {
     name: string;
     rating?: number;
@@ -26,13 +37,12 @@ interface ProjectDetail {
   };
 }
 
-
 const getStatusColor = (status: string): string => {
   switch (status) {
     case 'open':
       return 'bg-green-100 text-green-800';
     case 'in-progress':
-      return 'bg-yellow-100 text-yellow-800' ;
+      return 'bg-yellow-100 text-yellow-800';
     case 'completed':
       return 'bg-blue-100 text-blue-800';
     case 'cancelled':
@@ -43,33 +53,47 @@ const getStatusColor = (status: string): string => {
 };
 
 const ProjectDetails: React.FC = () => {
-  const {projectId} = useParams<{ projectId: string }>();
+  const { projectId } = useParams<{ projectId: string }>();
   const { user } = useAuth();
   const [project, setProject] = useState<ProjectDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [expandedProposalId, setExpandedProposalId] = useState<string | null>(null);
 
-  const isClient = user?.role === 'client';
+  const toggleProposal = (id: string) => {
+    setExpandedProposalId((prev) => (prev === id ? null : id));
+  };
 
+  const handleProposalAction = async (proposalId: string, action: 'accept' | 'reject') => {
+    try {
+      await axios.patch(
+        `http://localhost:5000/api/projects/${projectId}/proposals/${proposalId}/${action}`,
+        {},
+        { withCredentials: true }
+      );
+      // Refresh project data after action
+      const res = await axios.get(`http://localhost:5000/api/projects/${projectId}`, { withCredentials: true });
+      setProject(res.data.project);
+      setExpandedProposalId(null);
+    } catch (error) {
+      console.error(`Failed to ${action} proposal`, error);
+    }
+  };
+  
   useEffect(() => {
     const fetchProject = async () => {
       try {
         setLoading(true);
-        await axios.get(`http://localhost:5000/api/projects/${projectId}`, {withCredentials: true})
-        .then((res) => {
-          setProject(res.data.project);
-          console.log(res.data.project)
-          setError('');
-        })
-        .catch(err => console.log(err))
-        .finally(() => {
-          setLoading(false);
-        });
-
+        const res = await axios.get(`http://localhost:5000/api/projects/${projectId}`, { withCredentials: true });
+        setProject(res.data.project);
+        console.log(res.data.project);
+        setError('');
       } catch (err: any) {
         console.error(err);
         setError('Could not load project details');
-      } 
+      } finally {
+        setLoading(false);
+      }
     };
 
     if (projectId) {
@@ -80,6 +104,12 @@ const ProjectDetails: React.FC = () => {
   if (loading) return <div className="text-center py-20">Loading project details...</div>;
   if (error || !project) return <div className="text-center py-20 text-red-500">{error || 'Project not found'}</div>;
 
+  // Filter proposals to exclude rejected ones
+  const nonRejectedProposals = project.proposals.filter((p) => p.status !== 'rejected');
+
+  // Check if there is an accepted proposal (among non-rejected)
+  const acceptedProposal = nonRejectedProposals.find((p) => p.status === 'accepted');
+
   return (
     <div className="max-w-4xl mx-auto mb-104">
       <div className="mb-6">
@@ -88,19 +118,13 @@ const ProjectDetails: React.FC = () => {
         </Link>
         <h1 className="text-2xl md:text-3xl font-bold mb-4">{project.title}</h1>
         <div className="flex flex-wrap gap-2 mb-4">
-          <span className="bg-primary-100 text-primary-800 text-xs px-3 py-1 rounded-full">
-            {project.category}
-          </span>
+          <span className="bg-primary-100 text-primary-800 text-xs px-3 py-1 rounded-full">{project.category}</span>
           <span className="bg-gray-100 text-gray-800 text-xs px-3 py-1 rounded-full">
             Posted {new Date(project.createdAt).toLocaleDateString()}
           </span>
-          <span className="bg-accent-100 text-accent-800 text-xs px-3 py-1 rounded-full">
-            {project.proposals.length} proposals
-          </span>
+          <span className="bg-accent-100 text-accent-800 text-xs px-3 py-1 rounded-full">{nonRejectedProposals.length} proposals</span>
 
-          <span className={getStatusColor(project.status) + " text-xs px-3 py-1 rounded-full"}>
-            {project.status}
-          </span>
+          <span className={getStatusColor(project.status) + ' text-xs px-3 py-1 rounded-full'}>{project.status}</span>
         </div>
       </div>
 
@@ -122,7 +146,7 @@ const ProjectDetails: React.FC = () => {
           </div>
         </div>
 
-        <div className='flex justify-between flex-col md:flex-row'>
+        <div className="flex justify-between flex-col md:flex-row">
           {/* Project Details */}
           <div className="bg-white rounded-xl shadow-sm p-4 my-2 md:w-[49%]">
             <h2 className="text-lg font-semibold mb-4">Project Details</h2>
@@ -131,7 +155,9 @@ const ProjectDetails: React.FC = () => {
                 <DollarSign size={18} className="text-gray-500 mr-3 mt-0.5" />
                 <div>
                   <p className="text-sm text-gray-500">Budget</p>
-                  <p className="font-medium">${project.budget.min.toLocaleString()} - ${project.budget.max.toLocaleString()}</p>
+                  <p className="font-medium">
+                    ${project.budget.min.toLocaleString()} - ${project.budget.max.toLocaleString()}
+                  </p>
                 </div>
               </div>
               <div className="flex items-start">
@@ -150,7 +176,7 @@ const ProjectDetails: React.FC = () => {
               </div>
             </div>
           </div>
-        {/* About the Client */}
+          {/* About the Client */}
           <div className="bg-white rounded-xl shadow-sm p-4 my-2 md:w-[49%]">
             <h2 className="text-lg font-semibold mb-4">About the Client</h2>
             <div className="flex items-start mb-4">
@@ -168,43 +194,146 @@ const ProjectDetails: React.FC = () => {
                 <p className="text-sm">Payment Verified</p>
               </div>
               <div className="flex items-center">
-                <Star rating={project.client?.rating || 4.5} />
-                <p className="text-sm ml-2">{(project.client?.rating || 4.5).toFixed(1)} rating</p>
-              </div>
-              <div className="flex items-center">
                 <Calendar size={16} className="text-gray-500 mr-2" />
                 <p className="text-sm">Member since {project.client?.joined || '2023'}</p>
               </div>
               <div className="flex items-center">
                 <FileText size={16} className="text-gray-500 mr-2" />
-                <p className="text-sm">{project.proposals.length} proposals received</p>
+                <p className="text-sm">{nonRejectedProposals.length} proposals received</p>
               </div>
             </div>
           </div>
         </div>
-      </div>
 
+        {/* Proposals Section */}
+        {acceptedProposal ? (
+          <div className="bg-white rounded-xl shadow-sm p-4 my-6">
+            <h2 className="text-lg font-semibold mb-4">Accepted Proposal</h2>
+            <ProposalCard
+              proposal={acceptedProposal}
+              expandedProposalId={expandedProposalId}
+              toggleProposal={toggleProposal}
+              handleProposalAction={handleProposalAction}
+              showActions={false} // No actions for accepted proposal
+            />
+          </div>
+        ) : (
+          nonRejectedProposals.length > 0 && (
+            <div className="bg-white rounded-xl shadow-sm p-4 my-6">
+              <h2 className="text-lg font-semibold mb-4">Proposals</h2>
+              {nonRejectedProposals.map((proposal) => (
+                <ProposalCard
+                  key={proposal._id}
+                  proposal={proposal}
+                  expandedProposalId={expandedProposalId}
+                  toggleProposal={toggleProposal}
+                  handleProposalAction={handleProposalAction}
+                  showActions={true}
+                />
+              ))}
+            </div>
+          )
+        )}
+      </div>
     </div>
   );
 };
 
-// Star rating component
+interface ProposalCardProps {
+  proposal: Proposal;
+  expandedProposalId: string | null;
+  toggleProposal: (id: string) => void;
+  handleProposalAction: (proposalId: string, action: 'accept' | 'reject') => void;
+  showActions: boolean;
+}
+
+const ProposalCard: React.FC<ProposalCardProps> = ({
+  proposal,
+  expandedProposalId,
+  toggleProposal,
+  handleProposalAction,
+  showActions,
+}) => {
+  return (
+    <div key={proposal._id} className="border border-gray-200 rounded-lg p-4 mb-4">
+      <div className="flex justify-between items-center">
+        <div>
+          <Link to={`/freelancers/${proposal.freelancer._id}`} className="font-medium text-blue-600 hover:underline">
+            {proposal.freelancer.name}
+          </Link>
+          <Star rating={proposal.freelancerRating || 4.5} />
+          <p className="text-sm text-gray-500 mt-1">
+            ${proposal.bidAmount} | {proposal.estimatedDays} days
+          </p>
+        </div>
+        {showActions && (
+          <button
+            onClick={() => toggleProposal(proposal._id)}
+            className="text-blue-600 text-sm font-medium hover:underline"
+          >
+            {expandedProposalId === proposal._id ? 'Hide Details' : 'View Details'}
+          </button>
+        )}
+      </div>
+      {expandedProposalId === proposal._id && (
+        <div className="mt-4">
+          <p className="whitespace-pre-line">{proposal.coverLetter}</p>
+          <div className="mt-4 flex space-x-4 items-center">
+            {showActions && (
+              <>
+                <button
+                  onClick={() => handleProposalAction(proposal._id, 'accept')}
+                  className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+                >
+                  Accept
+                </button>
+                <button
+                  onClick={() => handleProposalAction(proposal._id, 'reject')}
+                  className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
+                >
+                  Reject
+                </button>
+              </>
+            )}
+            {proposal.status === 'accepted' && (
+              <span className="text-green-600 font-semibold">Proposal Accepted</span>
+            )}
+            {proposal.status === 'rejected' && (
+              <span className="text-red-600 font-semibold">Proposal Rejected</span>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// Simple star rating display component
 const Star: React.FC<{ rating: number }> = ({ rating }) => {
   const stars = [];
   const fullStars = Math.floor(rating);
-  const hasHalfStar = rating % 1 >= 0.5;
-
-  for (let i = 0; i < 5; i++) {
-    if (i < fullStars) {
-      stars.push(<svg key={i} className="w-4 h-4 text-yellow-400 fill-current" viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" /></svg>);
-    } else if (i === fullStars && hasHalfStar) {
-      stars.push(<svg key={i} className="w-4 h-4 text-yellow-400" viewBox="0 0 24 24"><defs><linearGradient id="half" x1="0" x2="100%" y1="0" y2="0"><stop offset="50%" stopColor="#FBBF24" /><stop offset="50%" stopColor="#D1D5DB" /></linearGradient></defs><path fill="url(#half)" d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" /></svg>);
-    } else {
-      stars.push(<svg key={i} className="w-4 h-4 text-gray-300 fill-current" viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" /></svg>);
-    }
+  const halfStar = rating % 1 >= 0.5;
+  for (let i = 0; i < fullStars; i++) {
+    stars.push(
+      <span key={i} className="text-yellow-400">
+        ★
+      </span>
+    );
   }
-
-  return <div className="flex">{stars}</div>;
+  if (halfStar)
+    stars.push(
+      <span key="half" className="text-yellow-400">
+        ☆
+      </span>
+    );
+  while (stars.length < 5) {
+    stars.push(
+      <span key={'empty' + stars.length} className="text-gray-300">
+        ★
+      </span>
+    );
+  }
+  return <div>{stars}</div>;
 };
 
 export default ProjectDetails;

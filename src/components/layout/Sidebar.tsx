@@ -43,7 +43,7 @@ const Sidebar: React.FC = () => {
     },
     { 
       name: user?.role === 'client' ? 'Projects' : 'Proposals', 
-      path: user?.role === 'client' ? `/projects/client/${user?.id}` : '/proposals', 
+      path: user?.role === 'client' ? `/projects/client/${user?.id}` : `/proposals/${user?.id}`, 
       icon: <Briefcase size={20} /> 
     },
     { 

@@ -2,11 +2,9 @@ import express from 'express';
 import { body } from 'express-validator';
 import { 
   createProposal, 
-  getProposals, 
+  getUserProposals, 
   getProposal,
-  updateProposal,
-  acceptProposal,
-  rejectProposal 
+  updateProposal
 } from '../controllers/proposals.js';
 import { authenticateToken, authorizeRole } from '../middleware/auth.js';
 
@@ -20,10 +18,9 @@ router.post('/:projectId', [
   body('estimatedDays').isNumeric().withMessage('Estimated days must be a number')
 ], createProposal);
 
-router.get('/', authenticateToken, getProposals);
-router.get('/:id', authenticateToken, getProposal);
+router.get('/:userId', authenticateToken, authorizeRole(['freelancer']), getUserProposals);
+router.get('/:proposalId', authenticateToken, getProposal);
 router.put('/:id', authenticateToken, authorizeRole(['freelancer']), updateProposal);
-router.post('/:id/accept', authenticateToken, authorizeRole(['client']), acceptProposal);
-router.post('/:id/reject', authenticateToken, authorizeRole(['client']), rejectProposal);
+
 
 export default router;
