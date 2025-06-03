@@ -3,6 +3,7 @@ import Proposal from '../models/Proposal.js';
 import Project from '../models/Project.js';
 import User from '../models/User.js';
 import Contract from '../models/Contract.js';
+import Conversation from '../models/Conversation.js';
 
 export const createProposal = async (req, res) => {
   try {
@@ -128,7 +129,6 @@ export const updateProposalStatus = async (req, res) => {
     proposal.status = action === 'accept' ? 'accepted' : 'rejected';
     await proposal.save();
 
-    // If accepted, update the project's selectedProposal and status
     if (action === 'accept') {
       const project = await Project.findById(projectId);
       if (!project) return res.status(404).json({ message: 'Project not found' });
@@ -138,21 +138,26 @@ export const updateProposalStatus = async (req, res) => {
         status: 'in-progress',
       });
 
-      const contractExists = await Contract.findOne({ proposal: proposal._id });
-      if (!contractExists) {
-        await Contract.create({
+      let contract = await Contract.findOne({ proposal: proposal._id });
+      if (!contract) {
+        contract = await Contract.create({
           project: projectId,
           proposal: proposalId,
           freelancer: proposal.freelancer,
           client: project.client,
         });
+
+        // Create conversation after contract creation
+        await Conversation.create({
+          contractId: contract._id,
+          participants: [proposal.freelancer, project.client],
+        });
       }
     }
 
-
-    return res.status(200).json({ message: `Proposal ${action}ed successfully`, proposal });
+    return res.status(200).json({ message: `Proposal ${action}ed successfully` });
   } catch (err) {
-    console.error('Error updating proposal:', err);
-    return res.status(500).json({ message: 'Server error' });
+    console.error(err);
+    res.status(500).json({ message: 'Server error' });
   }
 };

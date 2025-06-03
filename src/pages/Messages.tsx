@@ -1,92 +1,130 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Search, Send, User } from 'lucide-react';
+import { useSocket } from '../context/SocketContext';
+import axios from 'axios';
+import { useAuth } from '../context/AuthContext';
 
 interface Message {
-  id: string;
+  _id: string;
   content: string;
-  sender: {
-    id: string;
-    name: string;
-    avatar?: string;
-  };
-  timestamp: string;
+  sender: string;
+  recipient: string;
+  createdAt: string;
   read: boolean;
+  conversation: string;
+}
+
+interface Participant {
+  _id: string;
+  name: string;
+  email: string;
+  role: string; // Or 'freelancer' | 'client'
+  avatar?: string;
 }
 
 interface Conversation {
-  id: string;
-  participant: {
-    id: string;
-    name: string;
-    avatar?: string;
-  };
-  lastMessage: string;
-  timestamp: string;
-  unread: number;
+  _id: string;
+  contractId: string;
+  participants: Participant[];
+  lastMessage?: string;
+  updatedAt?: string;
+  __v?: number;
+  unread?: number;
+  timestamp?: string;
 }
 
-// Mock data
-const mockConversations: Conversation[] = [
-  {
-    id: '1',
-    participant: {
-      id: '2',
-      name: 'Jane Smith',
-      avatar: 'https://images.pexels.com/photos/415829/pexels-photo-415829.jpeg?auto=compress&cs=tinysrgb&w=150'
-    },
-    lastMessage: 'That sounds great! I\'ll send you the details.',
-    timestamp: '2 min ago',
-    unread: 2
-  },
-  {
-    id: '2',
-    participant: {
-      id: '3',
-      name: 'Michael Chen'
-    },
-    lastMessage: 'When can you start the project?',
-    timestamp: '1 hour ago',
-    unread: 0
-  },
-  // Add more conversations as needed
-];
-
-const mockMessages: Message[] = [
-  {
-    id: '1',
-    content: 'Hi, I saw your project posting and I\'m interested in helping you out.',
-    sender: {
-      id: '1',
-      name: 'You'
-    },
-    timestamp: '2:30 PM',
-    read: true
-  },
-  {
-    id: '2',
-    content: 'Thanks for reaching out! Could you tell me more about your experience with similar projects?',
-    sender: {
-      id: '2',
-      name: 'Jane Smith',
-      avatar: 'https://images.pexels.com/photos/415829/pexels-photo-415829.jpeg?auto=compress&cs=tinysrgb&w=150'
-    },
-    timestamp: '2:32 PM',
-    read: true
-  },
-  // Add more messages as needed
-];
-
 const Messages: React.FC = () => {
+  const messagesEndRef = useRef<HTMLDivElement | null>(null);
+
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [selectedConversation, setSelectedConversation] = useState<string | null>(null);
   const [newMessage, setNewMessage] = useState('');
-  const [searchQuery, setSearchQuery] = useState('');
+  const [isLoadingConversations, setIsLoadingConversations] = useState(false);
+  const [isLoadingMessages, setIsLoadingMessages] = useState(false);
 
-  const handleSendMessage = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (newMessage.trim()) {
-      // Send message logic would go here
-      setNewMessage('');
+  const { user } = useAuth();
+  const socket = useSocket();
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  useEffect(() => {
+    const fetchConversations = async () => {
+      setIsLoadingConversations(true);
+      try {
+        const res = await axios.get('http://localhost:5000/api/messages/conversations', { withCredentials: true });
+        if (Array.isArray(res.data)) {
+          setConversations(res.data);
+        } else {
+          console.error('Unexpected conversation response:', res.data);
+          setConversations([]);
+        }
+      } catch (err) {
+        console.error('Error fetching conversations', err);
+        setConversations([]);
+      } finally {
+        setIsLoadingConversations(false);
+      }
+    };
+    fetchConversations();
+  }, []);
+
+  useEffect(() => {
+    if (selectedConversation) {
+      const fetchMessages = async () => {
+        setIsLoadingMessages(true);
+        try {
+          const res = await axios.get(`http://localhost:5000/api/messages/${selectedConversation}`, { withCredentials: true });
+          setMessages(res.data);
+          socket?.emit('joinRoom', { conversationId: selectedConversation });
+        } catch (err) {
+          console.error('Error fetching messages', err);
+          setMessages([]);
+        } finally {
+          setIsLoadingMessages(false);
+        }
+      };
+      fetchMessages();
     }
+  }, [selectedConversation]);
+
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleReceiveMessage = (message: Message) => {
+      if (message.conversation === selectedConversation) {
+        setMessages((prev) => [...prev, message]);
+      }
+    };
+
+    socket.on('receiveMessage', handleReceiveMessage);
+
+    return () => {
+      socket.off('receiveMessage', handleReceiveMessage);
+    };
+  }, [socket, selectedConversation]);
+
+  const handleSendMessage = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newMessage.trim() || !selectedConversation) return;
+
+    const recipient = getOtherUserId();
+
+    socket?.emit('sendMessage', {
+      conversationId: selectedConversation,
+      sender: user?.id,
+      recipient,
+      content: newMessage,
+    });
+
+    setNewMessage('');
+  };
+
+  const getOtherUserId = (): string => {
+    const convo = conversations.find(c => c._id === selectedConversation);
+    return convo?.participants.find(p => p._id !== user?.id)?._id || '';
   };
 
   return (
@@ -99,69 +137,71 @@ const Messages: React.FC = () => {
             <input
               type="text"
               placeholder="Search conversations..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
               className="input pl-10"
             />
           </div>
         </div>
 
         <div className="flex-1 overflow-y-auto">
-          {mockConversations.map((conversation) => (
-            <button
-              key={conversation.id}
-              onClick={() => setSelectedConversation(conversation.id)}
-              className={`w-full p-4 text-left hover:bg-gray-50 transition-colors ${
-                selectedConversation === conversation.id ? 'bg-primary-50' : ''
-              }`}
-            >
-              <div className="flex items-center space-x-3">
-                {conversation.participant.avatar ? (
-                  <img
-                    src={conversation.participant.avatar}
-                    alt={conversation.participant.name}
-                    className="w-11 h-11 rounded-full object-cover"
-                  />
-                ) : (
-                  <div className="w-11 h-11 rounded-full bg-gray-200 flex items-center justify-center">
-                    <User size={24} className="text-gray-500" />
+          {isLoadingConversations ? (
+            <div className="p-4 text-center text-gray-500">Loading conversations...</div>
+          ) : (
+            conversations.map((conversation) => (
+              <button
+                key={conversation._id}
+                onClick={() => setSelectedConversation(conversation._id)}
+                className={`w-full p-4 text-left hover:bg-gray-50 transition-colors ${
+                  selectedConversation === conversation._id ? 'bg-primary-50' : ''
+                }`}
+              >
+                <div className="flex items-center space-x-3">
+                  {conversation.participants[(user?.role === "freelancer") ? 0 : 1]?.avatar ? (
+                    <img
+                      src={conversation.participants[(user?.role === "freelancer") ? 1 : 0]?.avatar}
+                      alt={conversation.participants[(user?.role === "freelancer") ? 1 : 0]?.name}
+                      className="w-11 h-11 rounded-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-11 h-11 rounded-full bg-gray-200 flex items-center justify-center">
+                      <User size={24} className="text-gray-500" />
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex justify-between items-baseline">
+                      <h3 className="font-medium text-lg truncate">
+                        {conversation.participants[(user?.role === "freelancer") ? 1 : 0]?.name}
+                      </h3>
+                      <span className="text-xs text-gray-500">
+                        {conversation.timestamp}
+                      </span>
+                    </div>
+                    <p className="text-sm text-gray-600 truncate">
+                      {conversation.lastMessage}
+                    </p>
                   </div>
-                )}
-                <div className="flex-1 min-w-0">
-                  <div className="flex justify-between items-baseline">
-                    <h3 className="font-medium text-lg truncate">
-                      {conversation.participant.name}
-                    </h3>
-                    <span className="text-xs text-gray-500">
-                      {conversation.timestamp}
+                  {conversation.unread && conversation.unread > 0 && (
+                    <span className="bg-primary-500 text-white text-xs px-2 py-1 rounded-full">
+                      {conversation.unread}
                     </span>
-                  </div>
-                  <p className="text-sm text-gray-600 truncate">
-                    {conversation.lastMessage}
-                  </p>
+                  )}
                 </div>
-                {conversation.unread > 0 && (
-                  <span className="bg-primary-500 text-white text-xs px-2 py-1 rounded-full">
-                    {conversation.unread}
-                  </span>
-                )}
-              </div>
-            </button>
-          ))}
+              </button>
+            ))
+          )}
         </div>
       </div>
 
       {/* Messages Area */}
-      <div className="flex-1 flex flex-col bg-gray-50">
+      <div className="flex-1 flex flex-col bg-gradient-to-b from-gray-200 via-gray-200 to-gray-100">
         {selectedConversation ? (
           <>
             {/* Chat Header */}
             <div className="bg-white border-b border-gray-200 p-4">
               <div className="flex items-center space-x-3">
-                {mockConversations.find(c => c.id === selectedConversation)?.participant.avatar ? (
+                {conversations.find(c => c._id === selectedConversation)?.participants?.[(user?.role === "freelancer") ? 1 : 0]?.avatar ? (
                   <img
-                    src={mockConversations.find(c => c.id === selectedConversation)?.participant.avatar}
-                    alt={mockConversations.find(c => c.id === selectedConversation)?.participant.name}
+                    src={conversations.find(c => c._id === selectedConversation)?.participants[(user?.role === "freelancer") ? 1 : 0].avatar}
+                    alt={conversations.find(c => c._id === selectedConversation)?.participants[(user?.role === "freelancer") ? 1 : 0].name}
                     className="w-10 h-10 rounded-full object-cover"
                   />
                 ) : (
@@ -170,34 +210,39 @@ const Messages: React.FC = () => {
                   </div>
                 )}
                 <h2 className="font-medium text-2xl">
-                  {mockConversations.find(c => c.id === selectedConversation)?.participant.name}
+                  {conversations.find(c => c._id === selectedConversation)?.participants[(user?.role === "freelancer") ? 1 : 0].name}
                 </h2>
               </div>
             </div>
 
             {/* Messages */}
             <div className="flex-1 overflow-y-auto p-4 space-y-4">
-              {mockMessages.map((message) => (
-                <div
-                  key={message.id}
-                  className={`flex ${message.sender.id === '1' ? 'justify-end' : 'justify-start'}`}
-                >
+              {isLoadingMessages ? (
+                <div className="text-center text-gray-500">Loading messages...</div>
+              ) : (
+                messages.map((message) => (
                   <div
-                    className={`max-w-[70%] rounded-lg p-3 ${
-                      message.sender.id === '1'
-                        ? 'bg-primary-500 text-white'
-                        : 'bg-white'
-                    }`}
+                    key={message._id}
+                    className={`flex ${message.sender === user?.id ? 'justify-end' : 'justify-start'}`}
                   >
-                    <p>{message.content}</p>
-                    <span className={`text-xs ${
-                      message.sender.id === '1' ? 'text-primary-100' : 'text-gray-500'
-                    } block mt-1`}>
-                      {message.timestamp}
-                    </span>
+                    <div
+                      className={`max-w-[70%] rounded-lg p-3 ${
+                        message.sender === user?.id
+                          ? 'bg-primary-500 text-white'
+                          : 'bg-white'
+                      }`}
+                    >
+                      <p>{message.content}</p>
+                      <span className={`text-xs ${
+                        message.sender === user?.id ? 'text-primary-100' : 'text-gray-500'
+                      } block mt-1`}>
+                        {new Date(message.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))
+              )}
+              <div ref={messagesEndRef} />
             </div>
 
             {/* Message Input */}
@@ -209,11 +254,12 @@ const Messages: React.FC = () => {
                   onChange={(e) => setNewMessage(e.target.value)}
                   placeholder="Type your message..."
                   className="input flex-1"
+                  disabled={isLoadingMessages}
                 />
                 <button
                   type="submit"
                   className="btn btn-primary"
-                  disabled={!newMessage.trim()}
+                  disabled={!newMessage.trim() || isLoadingMessages}
                 >
                   <Send size={20} />
                 </button>

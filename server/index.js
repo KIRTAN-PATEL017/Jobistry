@@ -46,11 +46,11 @@ mongoose.connect(process.env.MONGODB_URI)
 
 // Routes
 app.use('/api/auth', authRoutes);
-app.use('/api/users', authenticateToken, userRoutes);
-app.use('/api/projects', authenticateToken, projectRoutes);
-app.use('/api/proposals', authenticateToken, proposalRoutes);
-app.use('/api/contracts', authenticateToken, contractRoutes);
-app.use('api/messages', authenticateToken, messageRouter);
+app.use('/api/users', userRoutes);
+app.use('/api/projects', projectRoutes);
+app.use('/api/proposals', proposalRoutes);
+app.use('/api/contracts', contractRoutes);
+app.use('/api/messages', messageRouter);
 
 // Error handler
 app.use(errorHandler);
@@ -69,29 +69,31 @@ io.on('connection', (socket) => {
   });
 
   socket.on('sendMessage', async ({ conversationId, sender, recipient, content }) => {
-    try {
-      // Save message to DB
-      const newMessage = new Message({
-        conversation: conversationId,
-        sender,
-        recipient,
-        content,
-      });
-      await newMessage.save();
+  try {
+    // Save message to DB
+    const newMessage = new Message({
+      conversation: conversationId,
+      sender,
+      recipient,
+      content,
+    });
+    await newMessage.save();
 
-      // Broadcast to others in the room
-      io.to(conversationId).emit('receiveMessage', {
-        _id: newMessage._id,
-        sender,
-        recipient,
-        content,
-        createdAt: newMessage.createdAt,
-        read: newMessage.read,
-      });
-    } catch (err) {
-      console.error('Error saving message:', err);
-    }
-  });
+    // Emit full message details including conversation ID
+    io.to(conversationId).emit('receiveMessage', {
+      _id: newMessage._id,
+      sender: newMessage.sender,
+      recipient: newMessage.recipient,
+      content: newMessage.content,
+      createdAt: newMessage.createdAt,
+      read: newMessage.read,
+      conversation: newMessage.conversation, // <- ✅ THIS is important
+    });
+
+  } catch (err) {
+    console.error('Error saving message:', err);
+  }
+});
 
   socket.on('disconnect', () => {
     console.log('User disconnected:', socket.id);

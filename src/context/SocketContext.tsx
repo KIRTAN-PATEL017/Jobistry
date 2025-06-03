@@ -7,21 +7,21 @@ const SocketContext = createContext<Socket | null>(null);
 export const useSocket = () => useContext(SocketContext);
 
 export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const socketRef = useRef<Socket | null>(null);
+  const [socket, setSocket] = React.useState<Socket | null>(null);
 
   useEffect(() => {
-    const socket = io('http://localhost:5000', {
+    const newSocket = io('http://localhost:5000', {
       withCredentials: true,
     });
-    socketRef.current = socket;
+    setSocket(newSocket);
 
     return () => {
-      socket.disconnect();
+      newSocket.disconnect();
     };
   }, []);
 
   return (
-    <SocketContext.Provider value={socketRef.current}>
+    <SocketContext.Provider value={socket}>
       {children}
     </SocketContext.Provider>
   );

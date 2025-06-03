@@ -6,9 +6,11 @@ import axios from 'axios';
 
 interface Proposal {
   _id: string;
-  freelancerId: string;
-  freelancerName: string;
-  freelancerRating?: number;
+  freelancer : {
+    id: string;
+    name: string;
+    rating?: number;
+  },
   bidAmount: number;
   estimatedDays: number;
   coverLetter: string;
@@ -258,10 +260,10 @@ const ProposalCard: React.FC<ProposalCardProps> = ({
     <div key={proposal._id} className="border border-gray-200 rounded-lg p-4 mb-4">
       <div className="flex justify-between items-center">
         <div>
-          <Link to={`/freelancers/${proposal.freelancer._id}`} className="font-medium text-blue-600 hover:underline">
+          <Link to={`/freelancers/${proposal.freelancer.id}`} className="font-medium text-blue-600 hover:underline">
             {proposal.freelancer.name}
           </Link>
-          <Star rating={proposal.freelancerRating || 4.5} />
+          <Star rating={proposal.freelancer.rating || 4.5} />
           <p className="text-sm text-gray-500 mt-1">
             ${proposal.bidAmount} | {proposal.estimatedDays} days
           </p>
