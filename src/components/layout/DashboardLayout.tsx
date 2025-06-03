@@ -53,8 +53,8 @@ const DashboardLayout: React.FC = () => {
       )}
 
       {/* Main Content */}
-      <main className="pt-20 md:pl-64 min-h-screen">
-        <div className="container mx-auto my-[-18px] px-4 py-2">
+      <main className="pt-14 md:pl-64 min-h-screen">
+        <div className="container mx-auto my-[-18px] px-6 py-6">
           <Outlet />
         </div>
       </main>

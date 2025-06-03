@@ -1,12 +1,11 @@
 import React, { useState } from 'react';
-import { NavLink, useLocation } from 'react-router-dom';
+import { NavLink } from 'react-router-dom';
 import { 
   Home, 
   User, 
   MessageSquare, 
   Briefcase, 
   FileText, 
-  DollarSign,
   Star, 
   Bell, 
   Settings, 
@@ -19,7 +18,6 @@ import { useAuth } from '../../context/AuthContext';
 const Sidebar: React.FC = () => {
   const [collapsed, setCollapsed] = useState(false);
   const { user, logout } = useAuth();
-  const location = useLocation();
 
   const toggleSidebar = () => {
     setCollapsed(!collapsed);

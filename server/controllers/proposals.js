@@ -2,6 +2,7 @@ import { validationResult } from 'express-validator';
 import Proposal from '../models/Proposal.js';
 import Project from '../models/Project.js';
 import User from '../models/User.js';
+import Contract from '../models/Contract.js';
 
 export const createProposal = async (req, res) => {
   try {
@@ -129,11 +130,25 @@ export const updateProposalStatus = async (req, res) => {
 
     // If accepted, update the project's selectedProposal and status
     if (action === 'accept') {
+      const project = await Project.findById(projectId);
+      if (!project) return res.status(404).json({ message: 'Project not found' });
+
       await Project.findByIdAndUpdate(projectId, {
         selectedProposal: proposalId,
         status: 'in-progress',
       });
+
+      const contractExists = await Contract.findOne({ proposal: proposal._id });
+      if (!contractExists) {
+        await Contract.create({
+          project: projectId,
+          proposal: proposalId,
+          freelancer: proposal.freelancer,
+          client: project.client,
+        });
+      }
     }
+
 
     return res.status(200).json({ message: `Proposal ${action}ed successfully`, proposal });
   } catch (err) {

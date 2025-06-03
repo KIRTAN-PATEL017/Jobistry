@@ -16,6 +16,9 @@ import Profile from './pages/Profile';
 import UserProjects from './components/dashboard/UserProjects';
 import BrowseProjects from './pages/BrowseProjects';
 import UserProposals from './components/dashboard/UserProposals';
+import ComingSoon from './pages/ComingSoon';
+import Contracts from './pages/Contracts';
+import Messages from './pages/Messages';
 
 
 // Protected route component
@@ -46,16 +49,25 @@ const App: React.FC = () => {
           {/* Protected routes with DashboardLayout */}
           <Route element={<ProtectedRoute />}>
             <Route element={<DashboardLayout />}>
+              {/* Dashboard */}
               <Route path="/dashboard" element={<Dashboard />} />
+              {/* Profile */}
               <Route path="/profile/:userId" element={<Profile />} />
-
+              {/* Project */}
               <Route path="/projects/client/:userId" element={<UserProjects />} />
               <Route path="/projects/:projectId" element={<Project />} />
               <Route path="/projects/browse" element={<BrowseProjects />} />
-
               <Route path="/post-project" element={<CreateProject />} />
-
+              {/* Proposal */}
               <Route path="/proposals/:userId" element={<UserProposals />} />
+              {/* Contract */}
+              <Route path='/contracts' element={<Contracts/>}/>
+              {/* message */}
+              <Route path="/messages" element={<Messages />} />
+              
+              <Route path="/reviews" element={<ComingSoon />} />
+              <Route path="/notifications" element={<ComingSoon />} />
+              <Route path="/settings" element={<ComingSoon />} />
             </Route>
           </Route>
           

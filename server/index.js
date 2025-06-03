@@ -3,34 +3,43 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import mongoose from 'mongoose';
 import cookieParser from 'cookie-parser';
-
+import http from 'http';
+import { Server } from 'socket.io';
 
 import authRoutes from './routes/auth.js';
 import userRoutes from './routes/users.js';
 import projectRoutes from './routes/projects.js';
 import proposalRoutes from './routes/proposals.js';
-// import contractRoutes from './routes/contracts.js';
-// import reviewRoutes from './routes/reviews.js';
-// import messageRoutes from './routes/messages.js';
+import contractRoutes from './routes/contract.js';
+import messageRouter from './routes/messages.js'
 
-// Middleware imports
 import { errorHandler } from './middleware/errorHandler.js';
 import { authenticateToken } from './middleware/auth.js';
+
+import Message from './models/Message.js';
+import Conversation from './models/Conversation.js';
 
 dotenv.config();
 
 const app = express();
+const server = http.createServer(app); // Create HTTP server
+const io = new Server(server, {
+  cors: {
+    origin: 'http://localhost:5173', // your frontend
+    credentials: true,
+  },
+});
 
 // Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(cors({
-  origin: 'http://localhost:5173',  // your frontend URL
-  credentials: true,                // allow cookies
+  origin: 'http://localhost:5173',
+  credentials: true,
 }));
 
-// Connect to MongoDB
+// MongoDB
 mongoose.connect(process.env.MONGODB_URI)
   .then(() => console.log('Connected to MongoDB'))
   .catch((err) => console.error('MongoDB connection error:', err));
@@ -40,13 +49,51 @@ app.use('/api/auth', authRoutes);
 app.use('/api/users', authenticateToken, userRoutes);
 app.use('/api/projects', authenticateToken, projectRoutes);
 app.use('/api/proposals', authenticateToken, proposalRoutes);
-// app.use('/api/contracts', authenticateToken, contractRoutes);
-// app.use('/api/reviews', authenticateToken, reviewRoutes);
-// app.use('/api/messages', authenticateToken, messageRoutes);
+app.use('/api/contracts', authenticateToken, contractRoutes);
+app.use('api/messages', authenticateToken, messageRouter);
 
+// Error handler
 app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
+server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
+});
+
+io.on('connection', (socket) => {
+  console.log('A user connected:', socket.id);
+
+  socket.on('joinRoom', ({ conversationId }) => {
+    socket.join(conversationId);
+    console.log(`User ${socket.id} joined conversation ${conversationId}`);
+  });
+
+  socket.on('sendMessage', async ({ conversationId, sender, recipient, content }) => {
+    try {
+      // Save message to DB
+      const newMessage = new Message({
+        conversation: conversationId,
+        sender,
+        recipient,
+        content,
+      });
+      await newMessage.save();
+
+      // Broadcast to others in the room
+      io.to(conversationId).emit('receiveMessage', {
+        _id: newMessage._id,
+        sender,
+        recipient,
+        content,
+        createdAt: newMessage.createdAt,
+        read: newMessage.read,
+      });
+    } catch (err) {
+      console.error('Error saving message:', err);
+    }
+  });
+
+  socket.on('disconnect', () => {
+    console.log('User disconnected:', socket.id);
+  });
 });
