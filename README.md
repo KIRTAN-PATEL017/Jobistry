@@ -1,4 +1,8 @@
 # Jobistry
+<br></br>
+## !! THERE ARE SOME BUGS REGARDING STATE UPDATES THAT NEEDS TO BE ROSOLVED !!
+### !! Will release the updated version sson with additional changes too !!
+<br></br>
 
 ## 💼 Freelance Job Marketplace
 
