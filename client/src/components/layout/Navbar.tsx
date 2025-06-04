@@ -6,20 +6,10 @@ import NotificationDropdown from '../common/NotificationDropdown';
 
 const Navbar: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isScrolled, setIsScrolled] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const { isAuthenticated, user, logout } = useAuth();
   const location = useLocation();
-
-  // Handle scroll event for navbar appearance
-  useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 10);
-    };
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
 
   // Close mobile menu when route changes
   useEffect(() => {

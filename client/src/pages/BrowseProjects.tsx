@@ -137,7 +137,7 @@ const BrowseProjects: React.FC = () => {
     setProposalLoading(true);
     try {
       await axios.post(
-        `http://localhost:5000/api/projects/${currentProjectForProposal._id}/proposals`,
+        `/api/projects/${currentProjectForProposal._id}/proposals`,
         {
           coverLetter,
           bidAmount,

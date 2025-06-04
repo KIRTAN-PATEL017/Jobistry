@@ -99,7 +99,7 @@ const CreateProject: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    await axios.post('http://localhost:5000/api/projects', formData, {withCredentials: true})
+    await axios.post('/api/projects', formData, {withCredentials: true})
     .then((res) => {
       if(res.data.success) console.log("Project posted successfully");
       else console.log("Failed to post project.")

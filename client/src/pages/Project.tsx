@@ -69,12 +69,12 @@ const Project: React.FC = () => {
   const handleProposalAction = async (proposalId: string, action: 'accept' | 'reject') => {
     try {
       await axios.patch(
-        `http://localhost:5000/api/projects/${projectId}/proposals/${proposalId}/${action}`,
+        `/api/projects/${projectId}/proposals/${proposalId}/${action}`,
         {},
         { withCredentials: true }
       );
       // Refresh project data after action
-      const res = await axios.get(`http://localhost:5000/api/projects/${projectId}`, { withCredentials: true });
+      const res = await axios.get(`/api/projects/${projectId}`, { withCredentials: true });
       setProject(res.data.project);
       setExpandedProposalId(null);
     } catch (error) {
@@ -86,7 +86,7 @@ const Project: React.FC = () => {
     const fetchProject = async () => {
       try {
         setLoading(true);
-        const res = await axios.get(`http://localhost:5000/api/projects/${projectId}`, { withCredentials: true });
+        const res = await axios.get(`/api/projects/${projectId}`, { withCredentials: true });
         setProject(res.data.project);
         console.log(res.data.project);
         setError('');

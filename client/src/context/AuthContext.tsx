@@ -25,7 +25,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
-    axios.post('http://localhost:5000/api/auth/validate', {}, { withCredentials: true })
+    axios.post('/api/auth/validate', {}, { withCredentials: true })
       .then((res) => {
         setIsAuthenticated(res.data.success);
         setUser(res.data.user); // If your backend returns user info
@@ -39,7 +39,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const logout = async () => {
-    await axios.post('http://localhost:5000/api/auth/logout', {}, { withCredentials: true });
+    await axios.post('/api/auth/logout', {}, { withCredentials: true });
     setUser(null);
     setIsAuthenticated(false);
   };

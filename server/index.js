@@ -22,10 +22,10 @@ import Conversation from './models/Conversation.js';
 dotenv.config();
 
 const app = express();
-const server = http.createServer(app); // Create HTTP server
+const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: 'http://localhost:5173', // your frontend
+    origin: '*', // your frontend
     credentials: true,
   },
 });
@@ -35,7 +35,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(cors({
-  origin: 'http://localhost:5173',
+  origin: '*',
   credentials: true,
 }));
 
@@ -87,7 +87,7 @@ io.on('connection', (socket) => {
       content: newMessage.content,
       createdAt: newMessage.createdAt,
       read: newMessage.read,
-      conversation: newMessage.conversation, // <- ✅ THIS is important
+      conversation: newMessage.conversation,
     });
 
   } catch (err) {
