@@ -69,16 +69,20 @@ export const getUserProposals = async (req, res) => {
 
 export const getProposal = async (req, res) => {
   try {
-    const proposal = await Proposal.findById(req.params.id)
+    const proposal = await Proposal.findOne({ 
+        _id: req.params.id, 
+        status: { $ne: 'rejected' } // Only fetch if not rejected
+      })
       .populate('project')
       .populate('freelancer', 'name rating completedProjects');
 
     if (!proposal) {
-      return res.status(404).json({ message: 'Proposal not found' });
+      return res.status(404).json({ message: 'Proposal not found or rejected' });
     }
 
     res.json(proposal);
   } catch (error) {
+    console.error(error);
     res.status(500).json({ message: 'Server error' });
   }
 };

@@ -48,10 +48,10 @@ const LoginForm: React.FC = () => {
   // Hint for demo users
   const demoHint = () => {
     return (
-      <div className="mt-2 text-xs text-gray-500">
+      <div className="mt-2 text-[14px] text-gray-500">
         <p>Demo accounts:</p>
-        <p>Client: A@A.com / AAAAAAAA</p>
-        <p>Freelancer: B@B.com / BBBBBBBB</p>
+        <p>Client: client@client.com / client123</p>
+        <p>Freelancer: freelance@freelance.com / freelance123</p>
       </div>
     );
   };

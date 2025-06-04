@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
+
 // Layouts
 import MainLayout from './components/layout/MainLayout';
 import DashboardLayout from './components/layout/DashboardLayout';
@@ -32,7 +33,6 @@ const ProtectedRoute: React.FC = () => {
 
 };
 
-// Main App component
 const App: React.FC = () => {
 
   return (
@@ -51,17 +51,22 @@ const App: React.FC = () => {
             <Route element={<DashboardLayout />}>
               {/* Dashboard */}
               <Route path="/dashboard" element={<Dashboard />} />
+
               {/* Profile */}
               <Route path="/profile/:userId" element={<Profile />} />
+
               {/* Project */}
               <Route path="/projects/client/:userId" element={<UserProjects />} />
               <Route path="/projects/:projectId" element={<Project />} />
               <Route path="/projects/browse" element={<BrowseProjects />} />
               <Route path="/post-project" element={<CreateProject />} />
+
               {/* Proposal */}
               <Route path="/proposals/:userId" element={<UserProposals />} />
+
               {/* Contract */}
               <Route path='/contracts' element={<Contracts/>}/>
+
               {/* message */}
               <Route path="/messages" element={<Messages />} />
               
