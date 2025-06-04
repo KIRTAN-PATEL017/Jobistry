@@ -39,9 +39,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const logout = async () => {
-    await axios.post('https://jobistry-api.onrender.com/api/auth/logout', {}, { withCredentials: true });
     setUser(null);
     setIsAuthenticated(false);
+    await axios.post('https://jobistry-api.onrender.com/api/auth/logout', {}, { withCredentials: true });
   };
 
   return (
