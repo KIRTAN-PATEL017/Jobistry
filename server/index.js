@@ -14,10 +14,8 @@ import contractRoutes from './routes/contract.js';
 import messageRouter from './routes/messages.js'
 
 import { errorHandler } from './middleware/errorHandler.js';
-import { authenticateToken } from './middleware/auth.js';
 
 import Message from './models/Message.js';
-import Conversation from './models/Conversation.js';
 
 dotenv.config();
 

@@ -72,7 +72,13 @@ export const login = async (req, res) => {
       { expiresIn: '24h' }
     );
 
-    res.cookie('jwt', token);
+    res.cookie('jwt', token, {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'None',
+      maxAge: 24 * 60 * 60 * 1000, // optional: 1 day expiration
+    });
+
     res.json({
       token,
       user: {
