@@ -88,7 +88,6 @@ const Project: React.FC = () => {
         setLoading(true);
         const res = await axios.get(`https://jobistry-api.onrender.com/api/projects/${projectId}`, { withCredentials: true });
         setProject(res.data.project);
-        console.log(res.data.project);
         setError('');
       } catch (err: any) {
         console.error(err);

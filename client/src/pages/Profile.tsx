@@ -39,12 +39,10 @@ const Profile: React.FC = () => {
 
   useEffect(() => {
   const fetchProfile = async () => {
-    console.log("Fetching profile with userId:", userId); // Debug log
     try {
       const res = await axios.get(`https://jobistry-api.onrender.com/api/users/profile/${userId}`, {
         withCredentials: true
       });
-      console.log("Profile fetched:", res.data); // Debug log
       setProfile(res.data);
       setFormData({
         name: res.data.name || '',

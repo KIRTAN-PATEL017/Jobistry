@@ -24,7 +24,6 @@ interface Props {
 const ChatWindow: React.FC<Props> = ({
   messages,
   onSend,
-  contractId,
   newMessage,
   setNewMessage,
 }) => {

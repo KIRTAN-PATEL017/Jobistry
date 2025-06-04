@@ -31,7 +31,6 @@ const Signup: React.FC = () => {
         'role': role
       }, { withCredentials: true })
         .then((res) => {
-          console.log("Signupform =>", res);
           if (res.status < 300) {
             setUser(res.data.user);
             setIsAuthenticated(true);

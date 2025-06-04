@@ -61,7 +61,6 @@ const UserProjects: React.FC = () => {
         const res = await axios.get(`https://jobistry-api.onrender.com/api/projects/client/${userId}`, {
           withCredentials: true,
         })
-        console.log(res.data.projects);
         setProjects(res.data.projects || []);
         setLoading(false);
 
