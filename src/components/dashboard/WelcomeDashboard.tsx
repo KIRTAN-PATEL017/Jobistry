@@ -1,88 +1,58 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Briefcase, MessageSquare, User, PlusCircle, ArrowRight } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import axios from 'axios';
 
-interface ProjectCard {
+interface Budget {
+  min: number;
+  max: number;
+}
+
+interface Project {
   id: string;
   title: string;
   category: string;
-  status: 'active' | 'completed' | 'draft';
-  budget: string;
+  status: string;
   proposals: number;
-  deadline: string;
+  budget: Budget;
 }
 
-interface ProposalCard {
+interface Proposal {
   id: string;
   projectTitle: string;
   clientName: string;
-  status: 'pending' | 'accepted' | 'rejected';
-  bidAmount: string;
+  status: string;
+  bidAmount: Budget;
   submitDate: string;
 }
-
-// Mock data
-const mockProjects: ProjectCard[] = [
-  {
-    id: '1',
-    title: 'E-commerce Website Redesign',
-    category: 'Web Development',
-    status: 'active',
-    budget: '$2,500 - $3,500',
-    proposals: 12,
-    deadline: '2 weeks',
-  },
-  {
-    id: '2',
-    title: 'Mobile App UI Design',
-    category: 'UI/UX Design',
-    status: 'active',
-    budget: '$1,800 - $2,200',
-    proposals: 8,
-    deadline: '10 days',
-  },
-  {
-    id: '3',
-    title: 'Content Writing for Blog',
-    category: 'Content Creation',
-    status: 'draft',
-    budget: '$500 - $800',
-    proposals: 0,
-    deadline: '1 week',
-  },
-];
-
-const mockProposals: ProposalCard[] = [
-  {
-    id: '1',
-    projectTitle: 'E-commerce Website Redesign',
-    clientName: 'John Doe',
-    status: 'pending',
-    bidAmount: '$2,800',
-    submitDate: '3 days ago',
-  },
-  {
-    id: '2',
-    projectTitle: 'WordPress Theme Development',
-    clientName: 'Sarah Johnson',
-    status: 'accepted',
-    bidAmount: '$1,500',
-    submitDate: '1 week ago',
-  },
-  {
-    id: '3',
-    projectTitle: 'Logo Design for Startup',
-    clientName: 'Michael Chen',
-    status: 'rejected',
-    bidAmount: '$350',
-    submitDate: '2 weeks ago',
-  },
-];
 
 const WelcomeDashboard: React.FC = () => {
   const { user } = useAuth();
   const isClient = user?.role === 'client';
+  const [propojects, setPropojects] = useState<(Project | Proposal)[]>([]);
+
+  useEffect(() => {
+    const fetchProjects = async () => {
+      try {
+        if (user?.role === 'client') {
+          const res = await axios.get(`http://localhost:5000/api/projects/client/${user?.id}`, {
+            withCredentials: true,
+          });
+          setPropojects(res.data.projects || []);
+        } else {
+          const res = await axios.get(`http://localhost:5000/api/proposals/${user?.id}`, {
+            withCredentials: true,
+          });
+          setPropojects(res.data.proposals || []);
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    };
+
+    fetchProjects();
+  }, []);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -147,7 +117,7 @@ const WelcomeDashboard: React.FC = () => {
             </div>
           </div>
         </div>
-        
+
         <div className="bg-white rounded-xl shadow-sm p-6">
           <div className="flex items-center">
             <div className="p-3 bg-secondary-100 rounded-lg mr-4">
@@ -159,7 +129,7 @@ const WelcomeDashboard: React.FC = () => {
             </div>
           </div>
         </div>
-        
+
         <div className="bg-white rounded-xl shadow-sm p-6">
           <div className="flex items-center">
             <div className="p-3 bg-accent-100 rounded-lg mr-4">
@@ -182,7 +152,7 @@ const WelcomeDashboard: React.FC = () => {
             {isClient ? 'Your Projects' : 'Your Proposals'}
           </h2>
           <Link
-            to={isClient ? `/projects/${user.id}` : '/proposals'}
+            to={isClient ? `/projects/client/${user.id}` : '/proposals'}
             className="text-primary-600 hover:text-primary-700 text-sm font-medium flex items-center"
           >
             View All
@@ -193,9 +163,9 @@ const WelcomeDashboard: React.FC = () => {
         {/* Project/Proposal List */}
         <div className="space-y-4">
           {isClient
-            ? mockProjects.map((project) => (
+            ? (propojects as Project[]).map((project, i) => (
                 <Link
-                  key={project.id}
+                  key={i}
                   to={`/projects/${project.id}`}
                   className="block bg-gray-50 hover:bg-gray-100 transition-colors rounded-lg p-4"
                 >
@@ -212,15 +182,15 @@ const WelcomeDashboard: React.FC = () => {
                         {project.proposals} proposals
                       </span>
                       <span className="text-xs text-gray-600">
-                        Budget: {project.budget}
+                        Budget: ₹{project.budget.min} - ₹{project.budget.max}
                       </span>
                     </div>
                   </div>
                 </Link>
               ))
-            : mockProposals.map((proposal) => (
+            : (propojects as Proposal[]).map((proposal, i) => (
                 <Link
-                  key={proposal.id}
+                  key={i}
                   to={`/proposals/${proposal.id}`}
                   className="block bg-gray-50 hover:bg-gray-100 transition-colors rounded-lg p-4"
                 >
@@ -234,7 +204,7 @@ const WelcomeDashboard: React.FC = () => {
                         {proposal.status.charAt(0).toUpperCase() + proposal.status.slice(1)}
                       </span>
                       <span className="text-xs text-gray-600">
-                        Bid: {proposal.bidAmount}
+                        Bid: ₹{proposal.bidAmount.min} - ₹{proposal.bidAmount.max}
                       </span>
                       <span className="text-xs text-gray-600">
                         Submitted: {proposal.submitDate}
@@ -245,7 +215,7 @@ const WelcomeDashboard: React.FC = () => {
               ))}
         </div>
 
-        {(isClient ? mockProjects : mockProposals).length === 0 && (
+        {propojects.length === 0 && (
           <div className="text-center py-8">
             <p className="text-gray-500 mb-4">
               {isClient

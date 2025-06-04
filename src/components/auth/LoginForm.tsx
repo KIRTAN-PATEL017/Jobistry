@@ -50,8 +50,8 @@ const LoginForm: React.FC = () => {
     return (
       <div className="mt-2 text-xs text-gray-500">
         <p>Demo accounts:</p>
-        <p>Client: john@example.com / password123</p>
-        <p>Freelancer: jane@example.com / password123</p>
+        <p>Client: A@A.com / AAAAAAAA</p>
+        <p>Freelancer: B@B.com / BBBBBBBB</p>
       </div>
     );
   };
