@@ -23,7 +23,7 @@ const UserProposals: React.FC = () => {
   useEffect(() => {
     const fetchUserProposals = async () => {
       try {
-        const res = await axios.get(`/api/proposals/${user?.id}`, {
+        const res = await axios.get(`https://jobistry-api.onrender.com/api/proposals/${user?.id}`, {
           withCredentials: true,
         });
         setProposals(res.data.proposals);

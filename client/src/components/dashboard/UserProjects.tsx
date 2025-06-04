@@ -58,7 +58,7 @@ const UserProjects: React.FC = () => {
   useEffect(() => {
     const fetchProjects = async () => {
       try {
-        const res = await axios.get(`/api/projects/client/${userId}`, {
+        const res = await axios.get(`https://jobistry-api.onrender.com/api/projects/client/${userId}`, {
           withCredentials: true,
         })
         console.log(res.data.projects);

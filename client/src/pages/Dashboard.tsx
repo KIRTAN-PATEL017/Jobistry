@@ -36,12 +36,12 @@ const Dashboard: React.FC = () => {
     const fetchProjects = async () => {
       try {
         if (user?.role === 'client') {
-          const res = await axios.get(`/api/projects/client/${user?.id}`, {
+          const res = await axios.get(`https://jobistry-api.onrender.com/api/projects/client/${user?.id}`, {
             withCredentials: true,
           });
           setPropojects(res.data.projects || []);
         } else {
-          const res = await axios.get(`/api/proposals/${user?.id}`, {
+          const res = await axios.get(`https://jobistry-api.onrender.com/api/proposals/${user?.id}`, {
             withCredentials: true,
           });
           setPropojects(res.data.proposals || []);

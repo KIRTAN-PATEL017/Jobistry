@@ -10,7 +10,7 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [socket, setSocket] = React.useState<Socket | null>(null);
 
   useEffect(() => {
-    const newSocket = io('http://localhost:5000', {
+    const newSocket = io('https://jobistry-api.onrender.com', {
       withCredentials: true,
     });
     setSocket(newSocket);

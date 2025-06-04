@@ -54,7 +54,7 @@ const Messages: React.FC = () => {
     const fetchConversations = async () => {
       setIsLoadingConversations(true);
       try {
-        const res = await axios.get('/api/messages/conversations', { withCredentials: true });
+        const res = await axios.get('https://jobistry-api.onrender.com/api/messages/conversations', { withCredentials: true });
         if (Array.isArray(res.data)) {
           setConversations(res.data);
         } else {
@@ -76,7 +76,7 @@ const Messages: React.FC = () => {
       const fetchMessages = async () => {
         setIsLoadingMessages(true);
         try {
-          const res = await axios.get(`/api/messages/${selectedConversation}`, { withCredentials: true });
+          const res = await axios.get(`https://jobistry-api.onrender.com/api/messages/${selectedConversation}`, { withCredentials: true });
           setMessages(res.data);
           socket?.emit('joinRoom', { conversationId: selectedConversation });
         } catch (err) {

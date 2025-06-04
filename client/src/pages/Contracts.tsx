@@ -56,7 +56,7 @@ const Contracts: React.FC = () => {
     const fetchContracts = async () => {
       setIsLoading(true)
       try {
-        const res = await axios.get("/api/contracts", {
+        const res = await axios.get("https://jobistry-api.onrender.com/api/contracts", {
           withCredentials: true,
         })
         setContracts(res.data.contracts)

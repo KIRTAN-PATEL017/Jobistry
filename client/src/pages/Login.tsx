@@ -19,7 +19,7 @@ const Login: React.FC = () => {
     setIsLoading(true);
 
     try {
-      await axios.post('/api/auth/login', {
+      await axios.post('https://jobistry-api.onrender.com/api/auth/login', {
         'email': email,
         'password': password,
       }, { withCredentials: true })

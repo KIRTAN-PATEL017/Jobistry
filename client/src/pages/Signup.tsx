@@ -24,7 +24,7 @@ const Signup: React.FC = () => {
     try {
       // await signup(name, email, password, role);
 
-      await axios.post('/api/auth/register', {
+      await axios.post('https://jobistry-api.onrender.com/api/auth/register', {
         'name': name,
         'email': email,
         'password': password,

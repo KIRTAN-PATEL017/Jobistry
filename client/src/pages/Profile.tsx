@@ -41,7 +41,7 @@ const Profile: React.FC = () => {
   const fetchProfile = async () => {
     console.log("Fetching profile with userId:", userId); // Debug log
     try {
-      const res = await axios.get(`/api/users/profile/${userId}`, {
+      const res = await axios.get(`https://jobistry-api.onrender.com/api/users/profile/${userId}`, {
         withCredentials: true
       });
       console.log("Profile fetched:", res.data); // Debug log
@@ -92,7 +92,7 @@ const Profile: React.FC = () => {
 
   try {
     const res = await axios.put(
-      `http://localhost:5000/api/users/profile/${userId}`,
+      `https://jobistry-api.onrender.com/api/users/profile/${userId}`,
       {
         name: formData.name,
         bio: formData.bio,
