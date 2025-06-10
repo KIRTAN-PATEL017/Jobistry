@@ -42,7 +42,6 @@ export const register = async (req, res) => {
       success : true
     });
   } catch (error) {
-    res.cookie('jwt', token);
     res.status(500).json({ message: 'Server error', success : false });
   }
 };
