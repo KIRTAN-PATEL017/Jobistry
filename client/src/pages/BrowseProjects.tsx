@@ -137,7 +137,7 @@ const BrowseProjects: React.FC = () => {
     setProposalLoading(true);
     try {
       await axios.post(
-        `/api/projects/${currentProjectForProposal._id}/proposals`,
+        `https://jobistry-api.onrender.com/api/projects/${currentProjectForProposal._id}/proposals`,
         {
           coverLetter,
           bidAmount,
