@@ -7,7 +7,7 @@ export const getConversations = async (req, res) => {
   try {
     const userId = req.user._id;
     const conversations = await Conversation.find({
-      participants: { $in: [userId] },
+      participants: ObjectId(userId),
     })
       .populate('participants', 'name email avatar role') 
       .exec();
