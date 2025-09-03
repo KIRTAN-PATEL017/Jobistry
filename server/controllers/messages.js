@@ -5,7 +5,9 @@ import User from '../models/User.js';
 // GET /api/messages/conversations
 export const getConversations = async (req, res) => {
   try {
-    const conversations = await Conversation.find()
+    const conversations = await Conversation.find({
+      participants: { $in: [userId] },
+    })
       .populate('participants', 'name email avatar role') 
       .exec();
 
