@@ -6,7 +6,7 @@ import User from '../models/User.js';
 // GET /api/messages/conversations
 export const getConversations = async (req, res) => {
   try {
-    const userId = new mongoose.Types.ObjectId(req.user._id);
+    const userId = req.user._id;
     const conversations = await Conversation.find({
       participants: userId,
     })
